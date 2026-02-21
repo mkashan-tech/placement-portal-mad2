@@ -1,6 +1,6 @@
 from flask import Flask
 from models.db import db
-from models import user, company, student, drive, application
+from models import user, company, student, drive, application, placement
 from models.user import User
 from routes.auth import auth_bp
 from routes.admin import admin_bp
@@ -18,7 +18,6 @@ app.register_blueprint(auth_bp, url_prefix="/api")
 app.register_blueprint(admin_bp, url_prefix="/api/admin")
 app.register_blueprint(company_bp, url_prefix="/api/company")
 app.register_blueprint(student_bp, url_prefix="/api/student")
-
 
 with app.app_context():
     db.create_all()

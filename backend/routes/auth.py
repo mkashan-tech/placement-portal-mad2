@@ -64,14 +64,37 @@ def register_company():
 @auth_bp.route("/login", methods=["POST"])
 def login():
     data = request.json
+    
+    # 1. Safety check for missing keys
+    email = data.get("email")
+    password = data.get("password")
+    
+    if not email or not password:
+        return jsonify({"message": "Email and password are required"}), 400
 
-    user = User.query.filter_by(email=data["email"]).first()
+    user = User.query.filter_by(email=email).first()
 
-    if user and user.password == data["password"]:
+    # 2. Check credentials before setting session
+    if user and user.password == password:
+        
+        if not user.is_active:
+            return jsonify({"message": "Account deactivated"}), 403
+        
+        # 3. Role-based approval Check (Specifically for Companies)
+        if user.role == "company":
+            from models.company import Company
+            company = Company.query.filter_by(user_id=user.id).first()
+            
+            # Check if company exists and is approved
+            if not company or not company.approved:
+                return jsonify({"message": "Company not approved by admin"}), 403
+
+        # 4. Set session only after all checks pass
         session["user_id"] = user.id
         session["role"] = user.role
         
         return jsonify({"message": "Login success", "role": user.role})
+    
     return jsonify({"message": "Invalid credentials"}), 401
 
 
