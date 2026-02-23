@@ -1,4 +1,5 @@
 from .db import db
+from datetime import datetime
 
 class JobPosition(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -7,3 +8,9 @@ class JobPosition(db.Model):
     salary = db.Column(db.Integer)
     skills_required = db.Column(db.String(200))
     description = db.Column(db.Text)
+    location = db.Column(db.String(150))
+    experience_required = db.Column(db.String(100))
+    benefits = db.Column(db.Text)
+    status = db.Column(db.String(20), default="Active")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+

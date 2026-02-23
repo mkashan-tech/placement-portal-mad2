@@ -24,7 +24,6 @@ def register_student():
 
     return jsonify({"message": "Student registered succesfully!"})
 
-
 # Company Registration
 @auth_bp.route("/register/company", methods=["POST"])
 def register_company():
@@ -32,33 +31,52 @@ def register_company():
     import re
 
     data = request.json
+
+    email = data.get("email")
+    password = data.get("password")
+    company_name = data.get("company_name")
     hr_contact = data.get("hr_contact", "")
 
-    # Validation: Must be exactly 10 digits
+    # Required fields validation
+    if not email or not password or not company_name:
+        return jsonify({"message": "Email, password and company name are required"}), 400
+
+    # HR contact validation (exactly 10 digits)
     if not re.fullmatch(r"\d{10}", hr_contact):
-        return jsonify({"message": "HR contact must be exactly 10 digits."}), 400
+        return jsonify({"message": "HR contact must be exactly 10 digits"}), 400
 
-    user = User(
-        email=data["email"],
-        password=data["password"],
-        role="company"
-    )
-    db.session.add(user)
-    db.session.commit()
+    # Duplicate email check
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        return jsonify({"message": "Email already registered"}), 409
 
-    company = Company(
-        user_id=user.id,
-        company_name=data["company_name"],
-        website=data.get("website", ""),
-        hr_contact=hr_contact,
-        approved=False
-    )
+    try:
+        # Create user
+        user = User(
+            email=email,
+            password=password,
+            role="company"
+        )
+        db.session.add(user)
+        db.session.commit()
 
-    db.session.add(company)
-    db.session.commit()
+        # Create company profile
+        company = Company(
+            user_id=user.id,
+            company_name=company_name,
+            website=data.get("website", ""),
+            hr_contact=hr_contact,
+            approved=False
+        )
 
-    return jsonify({"message": "Company registered. Waiting for admin approval"})
+        db.session.add(company)
+        db.session.commit()
 
+        return jsonify({"message": "Company registered successfully. Awaiting admin approval"}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Registration failed", "error": str(e)}), 500
 
 # Common login for all
 @auth_bp.route("/login", methods=["POST"])

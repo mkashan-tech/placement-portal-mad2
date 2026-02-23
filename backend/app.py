@@ -26,8 +26,8 @@ with app.app_context():
     admin = User.query.filter_by(role="admin").first()
     if not admin:
         admin = User(
-            email="admin.placement@gmail.com",
-            password="admin123",
+            email="admin@ppa.com",
+            password="admin",
             role="admin",
             is_active=True
         )
