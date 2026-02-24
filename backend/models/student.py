@@ -7,4 +7,6 @@ class Student(db.Model):
     branch = db.Column(db.String(50))
     cgpa = db.Column(db.Float)
     skills = db.Column(db.Text)
+    experience = db.Column(db.Text)
+    education = db.Column(db.Text)
     resume = db.Column(db.String(200))

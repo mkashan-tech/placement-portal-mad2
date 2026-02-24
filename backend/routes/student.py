@@ -4,6 +4,8 @@ from models.job import JobPosition
 from models.application import Application 
 from models.company import Company 
 from models.db import db 
+from models.student import Student
+from models.placement import Placement
 
 student_bp = Blueprint("student", __name__)
 
@@ -19,8 +21,17 @@ def student_dashbaord():
 @student_bp.route("/jobs")
 @role_required("student")
 def view_jobs():
-    jobs = JobPosition.query.filter_by(status="Active").all()
+    search = request.args.get("q")
 
+    query = JobPosition.query.filter_by(status="Active")
+
+    if search:
+        query = query.filter(
+            JobPosition.title.contains(search)|
+            JobPosition.skills_required.contains(search)
+        )
+
+    jobs = query.all()
     result = []
 
     for j in jobs:
@@ -75,9 +86,7 @@ def apply_job(job_id):
 # Student View Application History
 @student_bp.route("/my-applications")
 @role_required("student")
-def view_applications():
-    from models.student import Student
-    
+def view_applications():    
     student = Student.query.filter_by(user_id=session["user_id"]).first()
 
     applications = Application.query.filter_by(student_id=student.id).all()
@@ -86,11 +95,77 @@ def view_applications():
 
     for app in applications:
         job = JobPosition.query.get(app.drive_id)
+        company = Company.query.get(job.company_id)
 
         result.append({
             "job_title": job.title,
+            "company": company.company_name,
             "status": app.status,
+            "interview_date": app.interview_date,
+            "feedback": app.feedback,
             "applied_on": app.applied_on
         })
 
     return jsonify(result)
+
+
+# Can Update their profile
+@student_bp.route("/update-profile", methods=["PUT"])
+@role_required("student")
+def update_profile():
+    student = Student.query.filter_by(user_id=session["user_id"]).first()
+
+    if not student:
+        return jsonify({"message": "Student not found"}), 404
+    
+    data = request.json
+
+    student.name = data.get("name", student.name)
+    student.branch = data.get("branch", student.branch)
+    student.cgpa = data.get("cgpa", student.cgpa)
+    student.skills = data.get("skills", student.skills)
+    student.experience = data.get("experience", student.experience)
+    student.education = data.get("education", student.education)
+
+    db.session.commit()
+
+    return jsonify({"message": "Profile updated successfully"})
+
+
+
+# Can downlaod offerlette
+@student_bp.route("/my-placements")
+@role_required("student")
+def my_placements():
+    student = Student.query.filter_by(user_id=session["user_id"]).first()
+    placements = Placement.query.filter_by(student_id=student.id).all()
+    
+    result = []
+
+    for p in placements:
+        company = Company.query.get(p.company_id)
+        result.append({
+            "company_id": p.company_id,
+            "company_name": company.company_name,
+            "position": p.position,
+            "salary": p.salary,
+            "joining_date": p.joining_date
+        })
+    
+    return jsonify(result)
+
+# Basic downloadble offer lerter
+@student_bp.route("/offer-letter/<int:placement_id>")
+@role_required("student")
+def offer_letter(placement_id):
+    placement = Placement.query.get(placement_id)
+
+    if not placement:
+        return jsonify({"message": "Placement not found"}), 404
+    
+    return jsonify({
+        "message": "Offer letter",
+        "position": placement.position,
+        "salary": placement.salary,
+        "joining_date": placement.joining_date
+    })
