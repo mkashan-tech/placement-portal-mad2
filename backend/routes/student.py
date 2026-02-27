@@ -9,7 +9,6 @@ from models.placement import Placement
 
 student_bp = Blueprint("student", __name__)
 
-student_bp = Blueprint("student", __name__)
 
 @student_bp.route("/dashboard")
 @role_required("student")
@@ -23,17 +22,23 @@ def student_dashbaord():
 def view_jobs():
     search = request.args.get("q")
 
-    query = JobPosition.query.filter_by(status="Active")
+    query = db.session.query(JobPosition)\
+        .join(Company, JobPosition.company_id == Company.id)\
+        .filter(
+            JobPosition.status == "Active",
+            JobPosition.approved == True,
+            Company.approved == True
+        )
 
     if search:
         query = query.filter(
-            JobPosition.title.contains(search)|
+            JobPosition.title.contains(search) |
             JobPosition.skills_required.contains(search)
         )
 
     jobs = query.all()
-    result = []
 
+    result = []
     for j in jobs:
         company = Company.query.get(j.company_id)
 
@@ -43,7 +48,6 @@ def view_jobs():
             "company": company.company_name,
             "salary": j.salary,
             "skills_required": j.skills_required
-
         })
 
     return jsonify(result)
@@ -56,12 +60,15 @@ def apply_job(job_id):
     from models.student import Student
 
     student = Student.query.filter_by(user_id=session["user_id"]).first()
+    if not student:
+        return jsonify({"message": "Student profile not found"}), 404
 
     # Check if job exist and active
     job = JobPosition.query.get(job_id)
 
     if not job or job.status != "Active":
         return jsonify({"message": "Job not available"}), 400
+    
     
     # Prevent duplicate application
     existing = Application.query.filter_by(
@@ -88,6 +95,8 @@ def apply_job(job_id):
 @role_required("student")
 def view_applications():    
     student = Student.query.filter_by(user_id=session["user_id"]).first()
+    if not student:
+        return jsonify({"message": "Student profile not found"}), 404
 
     applications = Application.query.filter_by(student_id=student.id).all()
 
@@ -138,6 +147,8 @@ def update_profile():
 @role_required("student")
 def my_placements():
     student = Student.query.filter_by(user_id=session["user_id"]).first()
+    if not student:
+        return jsonify({"message": "Student profile not found"}), 404
     placements = Placement.query.filter_by(student_id=student.id).all()
     
     result = []

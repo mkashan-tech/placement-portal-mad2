@@ -13,4 +13,4 @@ class JobPosition(db.Model):
     benefits = db.Column(db.Text)
     status = db.Column(db.String(20), default="Active")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
+    approved = db.Column(db.Boolean, default=False)

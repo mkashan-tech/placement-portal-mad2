@@ -7,23 +7,58 @@ auth_bp = Blueprint("auth",__name__)
 # Student Registration
 @auth_bp.route("/register/student", methods=["POST"])
 def register_student():
+    from models.student import Student
     data = request.json
 
-    existing_user = User.query.filter_by(email=data["email"]).first()
+    email = data.get('email')
+    password = data.get('password')
+
+    # Basic validation
+    if not email or not password:
+        return jsonify({"message": "Email and password are required"}), 400
+
+    existing_user = User.query.filter_by(email=email).first()
     if existing_user:
-        return jsonify({"message": "Email already registered"}), 400
+        return jsonify({"message": "Email already registered"}), 409
+    try:
+        # Create user
+        user = User(
+            email=email,
+            password=password,
+            role="student",
+            is_active=True
+        )
 
-    user = User(
-        email=data["email"],
-        password=data["password"],
-        role="student"
-    )
+        db.session.add(user)
+        db.session.commit()
 
-    db.session.add(user)
-    db.session.commit()
+        # Create student profile automatically
+        student = Student(
+            user_id=user.id,
+            name="",
+            branch="",
+            cgpa=0,
+            skills="",
+            experience="",
+            education="",
+            resume=""
+        )
 
-    return jsonify({"message": "Student registered succesfully!"})
+        db.session.add(student)
+        db.session.commit()
 
+        return jsonify({
+            "message": "Student registered successfully!"
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "message": "Registration failed",
+            "error": str(e)
+        }), 500
+
+    
 # Company Registration
 @auth_bp.route("/register/company", methods=["POST"])
 def register_company():
@@ -39,7 +74,7 @@ def register_company():
 
     # Required fields validation
     if not email or not password or not company_name:
-        return jsonify({"message": "Email, password and company name are required"}), 400
+        return jsonify({"message": "Email, password, 10 digit contact number and company name are required"}), 400
 
     # HR contact validation (exactly 10 digits)
     if not re.fullmatch(r"\d{10}", hr_contact):

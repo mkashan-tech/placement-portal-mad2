@@ -57,6 +57,10 @@ def create_job():
     data = request.json 
 
     company = Company.query.filter_by(user_id=session["user_id"]).first()
+    if not company:
+        return jsonify({"message": "Company not found"}), 404
+    if not company.approved:
+        return jsonify({"message": "Company not approved"}), 403
 
     job = JobPosition(
         company_id=company.id,
@@ -67,7 +71,8 @@ def create_job():
         experience_required = data.get("experience_required"),
         benefits = data.get("benefits"),
         location = data.get("location"),
-        status="Active"
+        status="Pending",
+        approved=False
     )
     db.session.add(job)
     db.session.commit()
@@ -146,39 +151,72 @@ def view_applicants(job_id):
 @role_required("company")
 def update_application(app_id):
 
-    company = Company.query.filter_by(user_id=session["user_id"]).first()
-    application = Application.query.get(app_id)
+    from models.placement import Placement
 
+    # Get loggin comdpany
+    company = Company.query.filter_by(user_id=session["user_id"]).first()
+    if not company:
+        return jsonify({"message": "Company not found"}), 404
+
+    # Get application
+    application = Application.query.get(app_id)
     if not application:
         return jsonify({"message": "Application not found"}), 404
 
+    # Get job related to application
     job = JobPosition.query.get(application.drive_id)
 
+    # Ensure company owning the job
     if not job or job.company_id != company.id:
         return jsonify({"message": "Unauthorized"}), 403
 
     data = request.json
     new_status = data.get("status")
 
-    allowed_status = ["Applied", "Shortlisted", "Interview", "Selected", "Rejected"]
+    # Allowed statuses
+    allowed_status = [
+        "Applied",
+        "Shortlisted",
+        "Interview",
+        "Selected",
+        "Rejected",
+        "Placed"
+    ]
 
-    # Validate status before updating
+    # Validate status value
     if new_status and new_status not in allowed_status:
         return jsonify({"message": "Invalid status"}), 400
 
-    # Update fields safely
+    # Status transition control by logic
+    valid_transitions = {
+        "Applied": ["Shortlisted", "Rejected"],
+        "Shortlisted": ["Interview", "Rejected"],
+        "Interview": ["Selected", "Rejected"],
+        "Selected": [],
+        "Rejected": [],
+        "Placed": []
+    }
+
+    current_status = application.status
+
     if new_status:
+        if new_status not in valid_transitions.get(current_status, []):
+            return jsonify({
+                "message": f"Invalid transition from {current_status} to {new_status}"
+            }), 400
+
         application.status = new_status
 
+    # Update interview date if provided
     if data.get("interview_date"):
         application.interview_date = data.get("interview_date")
 
+    # Update feedback if provided
     if data.get("feedback"):
         application.feedback = data.get("feedback")
 
-    # Create placement only if selected and not already placed
+    # If Selected > Create Placement + convert status to Placed
     if new_status == "Selected":
-        from models.placement import Placement
 
         existing_placement = Placement.query.filter_by(
             student_id=application.student_id,
@@ -195,6 +233,45 @@ def update_application(app_id):
             )
             db.session.add(placement)
 
+        # Final lifecycle state
+        application.status = "Placed"
+
     db.session.commit()
 
     return jsonify({"message": "Application updated successfully"})
+
+
+
+# Company can view student profile which applied for job
+@company_bp.route("/student-profile/<int:student_id>/<int:job_id>")
+@role_required("company")
+def view_student_profile(student_id, job_id):
+
+    company = Company.query.filter_by(user_id=session['user_id']).first()
+
+    # Chekc job belong to thast company
+    job = JobPosition.query.get(job_id)
+    if not job or job.company_id != company.id:
+        return jsonify({"message": "Unauthorized"}), 403
+    
+    # Check student applied to this job
+    application = Application.query.filter_by(
+        student_id=student_id,
+        drive_id=job_id
+    ).first()
+    
+    if not application:
+        return jsonify({"message": "Student did not applied to this job"}), 403
+    
+
+    student = Student.query.get(student_id)
+
+    return jsonify({
+        "name": student.name,
+        "branch": student.branch,
+        "cgpa": student.cgpa,
+        "skills": student.skills,
+        "experience": student.experience,
+        "education": student.education,
+        "resume": student.resume
+    })
