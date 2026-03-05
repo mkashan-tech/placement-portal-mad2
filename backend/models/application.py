@@ -1,4 +1,4 @@
-from .db import db
+from extensions import db
 from datetime import datetime
 
 
@@ -11,7 +11,7 @@ class Application(db.Model):
     drive_id = db.Column(db.Integer, db.ForeignKey("job_position.id"), nullable=False)
 
     status = db.Column(db.String(20), default="Applied", nullable=False)
-    interview_date = db.Column(db.String(50))
+    interview_date = db.Column(db.DateTime, nullable=True)
     feedback = db.Column(db.Text)
 
     applied_on = db.Column(db.DateTime, default=datetime.utcnow)

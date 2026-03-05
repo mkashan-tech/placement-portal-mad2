@@ -4,9 +4,10 @@ from models.user import User
 from models.company import Company
 from models.job import JobPosition
 from models.company import Company
-from models.db import db
+from extensions import db
 from models.application import Application
 from models.student import Student
+from extensions import cache
 
 
 admin_bp = Blueprint("admin", __name__)
@@ -14,6 +15,7 @@ admin_bp = Blueprint("admin", __name__)
 # Dashboard
 @admin_bp.route("/dashboard")
 @role_required("admin")
+@cache.cached(timeout=60)
 def admin_dashboard():
     total_students = User.query.filter_by(role="student").count()
     total_companies = User.query.filter_by(role="company").count()
@@ -145,6 +147,7 @@ def view_student_applications(student_id):
 
 # Admin can view all students
 @admin_bp.route("/students")
+@cache.cached(timeout=180)
 @role_required("admin")
 def view_all_students():
 

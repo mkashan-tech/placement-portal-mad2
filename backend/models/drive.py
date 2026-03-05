@@ -1,4 +1,4 @@
-from .db import db
+from extensions import db
 
 class PlacementDrive(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -6,5 +6,5 @@ class PlacementDrive(db.Model):
     job_title = db.Column(db.String(120))
     description = db.Column(db.Text)
     eligibility = db.Column(db.String(120))
-    deadline = db.Column(db.String(50))
+    deadline = db.Column(db.DateTime)
     status = db.Column(db.String(20))

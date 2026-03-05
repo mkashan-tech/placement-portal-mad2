@@ -2,9 +2,11 @@ from flask import Blueprint, jsonify, request, session
 from models.job import JobPosition
 from models.company import Company
 from utils.decorators import role_required
-from models.db import db
+from extensions import db
 from models.application import Application
 from models.student import Student
+from extensions import cache
+from routes.student import view_jobs
 
 company_bp = Blueprint("company", __name__)
 
@@ -76,6 +78,7 @@ def create_job():
     )
     db.session.add(job)
     db.session.commit()
+    cache.delete_memoized(view_jobs)
 
     return jsonify({"message": "Job created successfully, waiting for admin approval"})
 
@@ -120,6 +123,7 @@ def close_job(job_id):
 # View Applicants per job
 @company_bp.route("/applicants/<int:job_id>")
 @role_required("company")
+@cache.cached(timeout=120)
 def view_applicants(job_id):
     company = Company.query.filter_by(user_id=session["user_id"]).first()
 
@@ -145,35 +149,30 @@ def view_applicants(job_id):
         })
 
     return jsonify(result)
+from datetime import datetime
+from models.placement import Placement
 
-# update applicatio status
+# Update Application status
 @company_bp.route("/update-application/<int:app_id>", methods=["PUT"])
 @role_required("company")
 def update_application(app_id):
 
-    from models.placement import Placement
-
-    # Get loggin comdpany
     company = Company.query.filter_by(user_id=session["user_id"]).first()
     if not company:
         return jsonify({"message": "Company not found"}), 404
 
-    # Get application
     application = Application.query.get(app_id)
     if not application:
         return jsonify({"message": "Application not found"}), 404
 
-    # Get job related to application
     job = JobPosition.query.get(application.drive_id)
 
-    # Ensure company owning the job
     if not job or job.company_id != company.id:
         return jsonify({"message": "Unauthorized"}), 403
 
     data = request.json
     new_status = data.get("status")
 
-    # Allowed statuses
     allowed_status = [
         "Applied",
         "Shortlisted",
@@ -183,11 +182,9 @@ def update_application(app_id):
         "Placed"
     ]
 
-    # Validate status value
     if new_status and new_status not in allowed_status:
         return jsonify({"message": "Invalid status"}), 400
 
-    # Status transition control by logic
     valid_transitions = {
         "Applied": ["Shortlisted", "Rejected"],
         "Shortlisted": ["Interview", "Rejected"],
@@ -207,15 +204,18 @@ def update_application(app_id):
 
         application.status = new_status
 
-    # Update interview date if provided
+    # Interview Date Update
     if data.get("interview_date"):
-        application.interview_date = data.get("interview_date")
+        application.interview_date = datetime.strptime(
+            data.get("interview_date"),
+            "%Y-%m-%d %H:%M:%S"
+        )
 
-    # Update feedback if provided
+    # Feedback
     if data.get("feedback"):
         application.feedback = data.get("feedback")
 
-    # If Selected > Create Placement + convert status to Placed
+    # Placement Creation
     if new_status == "Selected":
 
         existing_placement = Placement.query.filter_by(
@@ -224,22 +224,29 @@ def update_application(app_id):
         ).first()
 
         if not existing_placement:
+
+            joining_date = None
+            if data.get("joining_date"):
+                joining_date = datetime.strptime(
+                    data.get("joining_date"),
+                    "%Y-%m-%d"
+                )
+
             placement = Placement(
                 student_id=application.student_id,
                 company_id=company.id,
                 position=job.title,
                 salary=job.salary,
-                joining_date=data.get("joining_date")
+                joining_date=joining_date
             )
             db.session.add(placement)
 
-        # Final lifecycle state
         application.status = "Placed"
 
+    #Commit 
     db.session.commit()
 
     return jsonify({"message": "Application updated successfully"})
-
 
 
 # Company can view student profile which applied for job

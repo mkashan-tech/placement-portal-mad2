@@ -3,9 +3,11 @@ from utils.decorators import role_required
 from models.job import JobPosition
 from models.application import Application 
 from models.company import Company 
-from models.db import db 
+from extensions import db
 from models.student import Student
 from models.placement import Placement
+from tasks.export_tasks import export_csv
+from extensions import cache
 
 student_bp = Blueprint("student", __name__)
 
@@ -18,8 +20,11 @@ def student_dashbaord():
 
 # View available jobs
 @student_bp.route("/jobs")
+@cache.cached(timeout=120, query_string=True)
 @role_required("student")
+
 def view_jobs():
+    print("Fetching jobs from DB...")
     search = request.args.get("q")
 
     query = db.session.query(JobPosition)\
@@ -180,3 +185,21 @@ def offer_letter(placement_id):
         "salary": placement.salary,
         "joining_date": placement.joining_date
     })
+
+
+# ==============================
+# Celery Work
+# ==============================
+@student_bp.route("/export")
+@role_required("student")
+def export_applications():
+    student = Student.query.filter_by(user_id=session["user_id"]).first()
+    applications = Application.query.filter_by(student_id=student.id).all()
+    data = []
+
+    for app in applications:
+        job = JobPosition.query.get(app.drive_id)
+        data.append([job.title, app.status, str(app.applied_on)])
+
+    task = export_csv.delay(data, "student_export.csv")
+    return jsonify({"message": "Export started", "task_id": task.id})
