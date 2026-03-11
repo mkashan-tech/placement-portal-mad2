@@ -38,7 +38,7 @@ def create_app():
     app.config["MAIL_PASSWORD"] = None
     app.config["MAIL_DEFAULT_SENDER"] = ("Placement Portal", "placement@portal.com")
 
-
+# work
     db.init_app(app)
     cache.init_app(app)
     mail.init_app(app)
