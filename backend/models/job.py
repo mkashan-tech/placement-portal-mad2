@@ -14,3 +14,4 @@ class JobPosition(db.Model):
     status = db.Column(db.String(20), default="Active")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     approved = db.Column(db.Boolean, default=False)
+    eligibility = db.Column(db.Text)

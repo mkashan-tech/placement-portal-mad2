@@ -36,4 +36,4 @@ def send_interview_reminders():
         #sending remidner
         print(f"Reminder sent to {user.email} for interview on {app.interview_date}")
 
-    return f"Sent{len(applications)} reminders"
+    return f"Sent {len(applications)} reminders"

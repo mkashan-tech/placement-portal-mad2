@@ -1,22 +1,33 @@
-from flask import Flask
+from flask import Flask, render_template
 from extensions import db, celery, cache, mail
 from models.user import User
 from routes.auth import auth_bp
 from routes.admin import admin_bp
 from routes.company import company_bp
 from routes.student import student_bp
+from extensions import db
+
+
 # ===================================
-#                    WSL
+#                    
 #  cd "/mnt/c/Users/Mohammad Kashan/Projects/placement_portal_v2_23F2003821/backend"
 #  source venv/bin/activate
 #  celery -A celery_worker.celery worker --loglevel=info
 #  celery -A celery_worker.celery beat --loglevel=info
 #  ./MailHog_linux_amd64
+#  http://localhost:8025
+
 # =====================================
 def create_app():
-    app = Flask(__name__)
+    app = Flask(
+        __name__,
+        template_folder="../frontend/templates",
+        static_folder="../frontend/static"
+    )
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///placement.db"
     app.secret_key = "secret"
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_SECURE"] = False
 
     # MailHog config
     app.config["MAIL_SERVER"] = "127.0.0.1"
@@ -32,11 +43,14 @@ def create_app():
     cache.init_app(app)
     mail.init_app(app)
 
+
 # registering blueprint
     app.register_blueprint(auth_bp, url_prefix="/api")
     app.register_blueprint(admin_bp, url_prefix="/api/admin")
     app.register_blueprint(company_bp, url_prefix="/api/company")
     app.register_blueprint(student_bp, url_prefix="/api/student")
+    from routes.tasks import tasks_bp
+    app.register_blueprint(tasks_bp, url_prefix="/api/tasks")
 
     with app.app_context():
         db.create_all()
@@ -58,7 +72,7 @@ def create_app():
 
     @app.route("/")
     def home():
-        return "Placement Portal API running."
+        return render_template("index.html")
 
     return app
 

@@ -151,6 +151,19 @@ def login():
     return jsonify({"message": "Invalid credentials"}), 401
 
 
+# To resolve frontend SPA issue
+@auth_bp.route("/me")
+def get_current_user():
+    from flask import session
+    if "role" not in session:
+        return jsonify({"logged_in": False})
+    
+    return jsonify({
+        "logged_in": True,
+        "role": session["role"]
+    })
+
+
 # Logout
 @auth_bp.route("/logout")
 def logout():
