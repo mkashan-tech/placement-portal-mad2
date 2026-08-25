@@ -6,14 +6,27 @@ __pycache__/
 # Flask instance folder
 instance/
 *.db
+*.sqlite3
 
 # Virtual environment
 venv/
+.venv/
+env/
+
+# Environment & secrets
 .env
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+reports/
+exports/
 
 # Node
 node_modules/
 
-# OS files
+# IDE / OS
+.idea/
+.vscode/
 .DS_Store
 Thumbs.db

@@ -24,10 +24,10 @@ def register_student():
         # Create user
         user = User(
             email=email,
-            password=password,
             role="student",
             is_active=True
         )
+        user.set_password(password)
 
         db.session.add(user)
         db.session.commit()
@@ -89,9 +89,9 @@ def register_company():
         # Create user
         user = User(
             email=email,
-            password=password,
             role="company"
         )
+        user.set_password(password)
         db.session.add(user)
         db.session.commit()
 
@@ -128,7 +128,7 @@ def login():
     user = User.query.filter_by(email=email).first()
 
     # 2. Check credentials before setting session
-    if user and user.password == password:
+    if user and user.check_password(password):
         
         if not user.is_active:
             return jsonify({"message": "Account deactivated"}), 403

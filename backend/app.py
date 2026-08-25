@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 from flask import Flask, render_template
 from extensions import db, celery, cache, mail
 from models.user import User
@@ -6,6 +8,8 @@ from routes.admin import admin_bp
 from routes.company import company_bp
 from routes.student import student_bp
 from extensions import db
+
+load_dotenv()
 
 
 # ===================================
@@ -24,19 +28,19 @@ def create_app():
         template_folder="../frontend/templates",
         static_folder="../frontend/static"
     )
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///placement.db"
-    app.secret_key = "secret"
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///placement.db")
+    app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-in-production")
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     app.config["SESSION_COOKIE_SECURE"] = False
 
-    # MailHog config
-    app.config["MAIL_SERVER"] = "127.0.0.1"
-    app.config["MAIL_PORT"]  = 1025
-    app.config["MAIL_USE_TLS"] = False
+    # MailHog config (local dev email testing)
+    app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER", "127.0.0.1")
+    app.config["MAIL_PORT"] = int(os.getenv("MAIL_PORT", 1025))
+    app.config["MAIL_USE_TLS"] = os.getenv("MAIL_USE_TLS", "False") == "True"
     app.config["MAIL_USE_SSL"] = False
     app.config["MAIL_USERNAME"] = None
     app.config["MAIL_PASSWORD"] = None
-    app.config["MAIL_DEFAULT_SENDER"] = ("Placement Portal", "placement@portal.com")
+    app.config["MAIL_DEFAULT_SENDER"] = ("Placement Portal", os.getenv("MAIL_DEFAULT_SENDER", "placement@portal.com"))
 
 # work
     db.init_app(app)
@@ -61,14 +65,14 @@ def create_app():
         admin = User.query.filter_by(role="admin").first()
         if not admin:
             admin = User(
-                email="admin@ppa.com",
-                password="admin",
+                email=os.getenv("DEFAULT_ADMIN_EMAIL", "admin@ppa.com"),
                 role="admin",
                 is_active=True
             )
+            admin.set_password(os.getenv("DEFAULT_ADMIN_PASSWORD", "admin123"))
             db.session.add(admin)
             db.session.commit()
-            print("Admin Created!")
+            print("Default admin created (see .env.example for credential config).")
 
     @app.route("/")
     def home():
