@@ -28,7 +28,7 @@ const StudentDashboard = {
                         <div class="card-body">
                             <h5 class="card-title">[[ j.title ]]</h5>
                             <h6 class="text-muted">[[ j.company ]]</h6>
-                            <p><strong>Salary:</strong> [[ j.salary ]] LPA</p>
+                            <p><strong>Salary:</strong>  [[ j.salary ]] LPA</p>
                             <p><strong>Skills:</strong> [[ j.skills_required ]]</p>
                             <p><strong>Location:</strong> [[ j.location || 'N/A' ]]</p>
                             

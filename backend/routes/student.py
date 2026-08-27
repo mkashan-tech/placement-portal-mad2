@@ -203,8 +203,17 @@ def upload_resume():
 # --------------------------------------------------
 @student_bp.route("/resume-file/<filename>")
 def serve_resume(filename):
+    # Viewed by the student themselves, or by an admin/company reviewing
+    # a profile — so we only require *some* logged-in session here,
+    # not a specific role.
+    if "role" not in session:
+        return jsonify({"message": "Unauthorized"}), 401
+
     upload_folder = os.path.join(current_app.root_path, "uploads")
-    filepath = os.path.join(upload_folder, filename)
+    filepath = os.path.join(upload_folder, secure_filename(filename))
+    if not os.path.exists(filepath):
+        return jsonify({"message": "File not found"}), 404
+
     return send_file(filepath, as_attachment=True)
 
 

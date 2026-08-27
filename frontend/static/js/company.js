@@ -58,7 +58,7 @@ const CompanyDashboard = {
                 <tbody>
                     <tr v-for="j in jobs" :key="j.id">
                         <td>[[ j.title ]]</td>
-                        <td>[[ j.salary ]] LPA</td>
+                        <td> [[ j.salary ]] LPA</td>
                         <td>[[ j.location || 'N/A' ]]</td>
                         <td>
                             <span class="badge" :class="{
@@ -130,6 +130,11 @@ const CompanyDashboard = {
             </div>
         </div>
 
+        <div v-if="tab==='applicants' && !selectedJob" class="text-center text-muted py-5">
+            <p>Select a job from the <strong>My Jobs</strong> tab to view its applicants.</p>
+            <button class="btn btn-outline-primary btn-sm" @click="tab='jobs'">Go to My Jobs</button>
+        </div>
+
         <div v-if="tab==='applicants' && selectedJob">
             <div class="d-flex justify-content-between mb-3">
                 <h4>Applicants for: [[ selectedJob.title ]]</h4>
@@ -162,6 +167,7 @@ const CompanyDashboard = {
                         <td>
                             <input type="datetime-local" class="form-control form-control-sm" 
                                    v-model="a.interview_date" 
+                                   :disabled="a.status==='Placed' || a.status==='Rejected'"
                                    @change="scheduleInterview(a.application_id, a.interview_date)">
                         </td>
                         <td>
@@ -173,7 +179,7 @@ const CompanyDashboard = {
                                 <option value="">Change Status</option>
                                 <option value="Shortlisted">Shortlist</option>
                                 <option value="Interview">Schedule Interview</option>
-                                <option value="Selected">Placed</option>
+                                <option value="Selected">Select & Finalize</option>
                                 <option value="Rejected">Reject</option>
                             </select>
                             <textarea v-if="a.status==='Rejected'" class="form-control form-control-sm mt-1" 

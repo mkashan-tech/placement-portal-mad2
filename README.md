@@ -16,7 +16,7 @@ This is the evolution of **[Placement Portal V1 (MAD-1)](https://github.com/mkas
 - **Student** — apply to jobs, upload a resume, track applications and placements, view offer letters, export application history
 
 ### Core Functionality
-- Session-based session authentication with hashed passwords
+- Session-based authentication with hashed passwords
 - Role-based access control (RBAC) across all API routes
 - Job drive lifecycle: create → admin approval → close/reopen
 - Application lifecycle with company-side status updates
@@ -28,6 +28,26 @@ This is the evolution of **[Placement Portal V1 (MAD-1)](https://github.com/mkas
 - **Caching (Flask-Caching + Redis)** for frequently accessed endpoints
 - Resume upload and download
 - Student search/filtering for admins
+
+---
+
+## 📸 Screenshots
+
+| Home | Admin — Companies |
+|---|---|
+| ![Home page](docs/screenshots/home.png) | ![Admin companies tab](docs/screenshots/admin_companies.png) |
+
+| Admin — Drives (Job Approval) | Company — Post Job |
+|---|---|
+| ![Admin drives tab](docs/screenshots/admin_drives.png) | ![Company post job](docs/screenshots/company_post_job.png) |
+
+| Company — Applicants | Student — Browse Jobs |
+|---|---|
+| ![Company applicants tab](docs/screenshots/company_applicants.png) | ![Student browse jobs](docs/screenshots/student_jobs.png) |
+
+| Student — My Applications | Student — Placements |
+|---|---|
+| ![Student applications tab](docs/screenshots/student_applications.png) | ![Student placements tab](docs/screenshots/student_placements.png) |
 
 ---
 
@@ -126,7 +146,7 @@ Full route definitions are in `backend/routes/`.
 | Task | Schedule | Purpose |
 |---|---|---|
 | `send_interview_reminders` | Daily, 9:00 AM | Emails students with interviews scheduled for the next day |
-| `generate_monthly_report` | 1st of each month, 8:00 AM | Generates an HTML placement summary report per company |
+| `generate_monthly_report` | 1st of each month, 8:00 AM | Generates a single HTML placement summary report with a company-wise breakdown |
 | `export_applications_csv` | On-demand | Exports application data to CSV for admin/student download |
 
 ---

@@ -17,10 +17,13 @@ env/
 .env
 
 # Celery
-celerybeat-schedule
+celerybeat-schedule*
 celerybeat.pid
 reports/
 exports/
+
+# Uploaded resumes (user data — never commit)
+backend/uploads/
 
 # Node
 node_modules/

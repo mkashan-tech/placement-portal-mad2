@@ -22,7 +22,10 @@ def export_csv(data, filename):
         else:
             # List data
             writer = csv.writer(file)
-            writer.writerow(["Job", "Status", "Date"])
+            writer.writerow([
+                "Student ID", "Company", "Job Title",
+                "Status", "Applied On", "Interview Date"
+            ])
             for row in data:
                 writer.writerow(row)
     

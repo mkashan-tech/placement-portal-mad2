@@ -13,14 +13,12 @@ load_dotenv()
 
 
 # ===================================
-#                    
-#  cd "/mnt/c/Users/Mohammad Kashan/Projects/placement_portal_v2_23F2003821/backend"
+# Local dev quick-reference (run from backend/):
 #  source venv/bin/activate
 #  celery -A celery_worker.celery worker --loglevel=info
 #  celery -A celery_worker.celery beat --loglevel=info
 #  ./MailHog_linux_amd64
 #  http://localhost:8025
-
 # =====================================
 def create_app():
     app = Flask(

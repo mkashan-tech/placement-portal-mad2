@@ -33,6 +33,7 @@ def admin_dashboard():
 
 # Pending Companies
 @admin_bp.route("/pending-companies")
+@role_required("admin")
 def pending_companies():
     companies = Company.query.filter_by(approved=False).all()  
     result = []
@@ -105,7 +106,16 @@ def search_students():
 @role_required("admin")
 def pending_jobs():
     jobs = JobPosition.query.filter_by(approved=False).all()
-    return jsonify([{"id": j.id, "title": j.title} for j in jobs])
+    result = []
+    for j in jobs:
+        company = Company.query.get(j.company_id)
+        result.append({
+            "id": j.id,
+            "title": j.title,
+            "company": company.company_name if company else "",
+            "salary": j.salary
+        })
+    return jsonify(result)
 
 
 

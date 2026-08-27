@@ -206,7 +206,7 @@ const AdminDashboard = {
                         <td>[[ d.id ]]</td>
                         <td>[[ d.company ]]</td>
                         <td>[[ d.title ]]</td>
-                        <td>[[ d.salary ]] LPA</td>
+                        <td> [[ d.salary ]] LPA</td>
                         <td>
                             <span class="badge" :class="d.approved ? 'bg-success' : 'bg-warning'">
                                 [[ d.approved ? 'Approved' : 'Pending' ]]
@@ -415,7 +415,7 @@ const AdminDashboard = {
         async generateReport() {
             try {
                 await axios.post('/api/admin/trigger-report');
-                alert("Report generation is running in background (Celery). Wait 5 seconds and then click 'View Latest Report'.");
+                alert("Report generation is running in background (Celery). Wait few seconds and then click 'View Latest Report'.");
             } catch (err) {
                 alert("Error triggering report. Check if Redis/Celery is running.");
             }

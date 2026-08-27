@@ -51,16 +51,22 @@ def generate_monthly_report():
                 f.write(f"<li>{stat['company_name']} - {stat['placements']} placements</li>")
             f.write("</ul></body></html>")
 
-        # Email part
-        msg = Message(
-            subject=f"Monthly Placement Report - {month_name}",
-            recipients=["admin@ppa.com"]   # change if needed
-        )
+        # Email part — the report file above is already saved to disk at
+        # this point, so a mail-server hiccup (e.g. MailHog not running)
+        # shouldn't mark the whole task as failed.
+        try:
+            msg = Message(
+                subject=f"Monthly Placement Report - {month_name}",
+                recipients=["admin@ppa.com"]   # change if needed
+            )
 
-        with open(filename) as f:
-            msg.html = f.read()
+            with open(filename) as f:
+                msg.html = f.read()
 
-        mail.send(msg)
+            mail.send(msg)
+            print("Report emailed to admin")
+            return "Monthly Report Generated & Sent"
 
-        print("Report emailed to admin")
-        return "Monthly Report Generated & Sent"
+        except Exception as e:
+            print(f"Report generated but email failed: {e}")
+            return "Monthly Report Generated (email delivery failed)"
